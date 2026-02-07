@@ -12,27 +12,23 @@ from typing import Tuple, Dict, Any
 import numpy as np
 
 
-def load_iris_binary(path: str, pair: Tuple[int, int]) -> Tuple[np.ndarray, np.ndarray]:
+def load_iris_binary(path: str) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Load iris data from `path` and create a binary dataset using label pair.
+    Load iris data from `path` and create a binary dataset using ONLY classes {0,1}.
 
-    Parameters
-    ----------
-    path : str
-        Path to data/iris.txt (expected columns: 4 features + label)
-    pair : (int, int)
-        Either (0,1) or (1,2). Keep only these labels.
-        Map smaller label -> 0, larger label -> 1.
+    Keep only samples with labels 0 or 1.
+    Map label 0 -> 0 and label 1 -> 1.
 
     Returns
     -------
     X : np.ndarray, shape (N, 4)
-        Standardized using only the returned subset.
+        Standardized using only the retained subset.
     y : np.ndarray, shape (N,)
         Labels in {0,1}.
     """
     # TODO
     raise NotImplementedError
+
 
 
 def sigmoid(z: np.ndarray) -> np.ndarray:
@@ -135,7 +131,7 @@ def train_logreg(
 if __name__ == "__main__":
     # Quick self-check (not graded)
     try:
-        X, y = load_iris_binary("data/iris.txt", (0, 1))
+        X, y = load_iris_binary("data/iris.txt")
         out = train_logreg(X, y, step_size=0.2, max_epochs=2000, tol=1e-9, batch_size=0, reg=1e-3, seed=0)
         w = out["w"]
         p = predict_proba(X, w)
