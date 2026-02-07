@@ -1,113 +1,151 @@
 """
-HW3 - Problem 2: Shattering and VC Dimension (computational)
+HW3 - Problem 2: Softmax Regression (multiclass, from scratch)
 
-You will write deterministic checks for whether a set of points is shattered by
-various hypothesis classes.
+Allowed: numpy (required), optionally scipy/pandas for loading.
+Do NOT use sklearn models for training.
 
-Allowed: numpy, scipy, pandas, scikit-learn.
+Autograder imports these functions directly. Keep names/signatures unchanged.
 """
 
 from __future__ import annotations
-
-from typing import List, Tuple
+from typing import Dict, Any
 import numpy as np
 
 
-def all_labelings(n: int) -> np.ndarray:
+def softmax(Z: np.ndarray) -> np.ndarray:
     """
-    Enumerate all binary labelings in {-1, +1}.
+    Stable softmax applied row-wise.
 
     Parameters
     ----------
-    n : int
-        Number of points.
+    Z : np.ndarray, shape (N, K)
 
     Returns
     -------
-    Y : np.ndarray, shape (2^n, n)
-        Each row is a labeling with entries in {-1, +1}.
-        Any deterministic ordering is acceptable (e.g., lexicographic bit order).
+    P : np.ndarray, shape (N, K)
+        Each row sums to 1.
     """
     # TODO
     raise NotImplementedError
 
 
-def shattered_by_linear_threshold(X: np.ndarray) -> bool:
+def one_hot(y: np.ndarray, K: int) -> np.ndarray:
     """
-    Return whether the hypothesis class T(a + b x1 + c x2) shatters X.
-
-    You must check whether EVERY labeling of X is realizable by a linear separator.
-
-    Hint: For each labeling, you may use sklearn.svm.LinearSVC(C=1e6) and verify it fits perfectly.
-    """
-    # TODO
-    raise NotImplementedError
-
-
-def shattered_by_axis_threshold(X: np.ndarray) -> bool:
-    """
-    Return whether the hypothesis class T(a + b x1) shatters X (threshold on x1 only).
-
-    You must check whether EVERY labeling is realizable by a 1D threshold on x1.
-    """
-    # TODO
-    raise NotImplementedError
-
-
-def shattered_by_circle(X: np.ndarray) -> bool:
-    """
-    Return whether the hypothesis class T((x1-a)^2 + (x2-b)^2 + c) shatters X.
-
-    Requirements:
-    - Deterministic implementation.
-    - For unit tests, you may assume n <= 4 and use a bounded grid search.
-      (Starter code may provide a fixed grid; otherwise define a small fixed grid yourself.)
+    Convert y in {0,...,K-1} to one-hot.
 
     Returns
     -------
-    bool
+    Y : np.ndarray, shape (N, K)
     """
     # TODO
     raise NotImplementedError
 
 
-def shattered_by_two_parallel_lines(X: np.ndarray) -> bool:
+def softmax_loss(X: np.ndarray, y: np.ndarray, W: np.ndarray, reg: float = 0.0) -> float:
     """
-    Return whether the classifier T(a + b x1 + c x2) * T(d + b x1 + c x2) shatters X.
+    Average cross-entropy loss with L2 regularization on W[1:,:] (exclude bias row).
 
-    This corresponds to two parallel lines with shared normal vector (b, c).
-    The product is +1 when both thresholds have the same sign (or equivalently, depending on convention,
-    you can define positive region as "between" two lines by choosing a consistent rule).
+    Model logits:
+      Z = b + X @ V
+    where bias row is W[0,:] and weights are W[1:,:].
 
-    Requirements:
-    - Deterministic implementation.
-    - For unit tests, you may assume n <= 4 and use a bounded deterministic search over directions (b,c)
-      and offsets (a,d) using a fixed set.
+    Parameters
+    ----------
+    X : (N, d)
+    y : (N,) in {0,...,K-1}
+    W : (d+1, K)
+    reg : nonnegative float
 
     Returns
     -------
-    bool
+    loss : float
+    """
+    # TODO
+    raise NotImplementedError
+
+
+def softmax_grad(X: np.ndarray, y: np.ndarray, W: np.ndarray, reg: float = 0.0) -> np.ndarray:
+    """
+    Gradient of softmax_loss w.r.t. W.
+
+    Returns
+    -------
+    grad : np.ndarray, shape (d+1, K)
+    """
+    # TODO
+    raise NotImplementedError
+
+
+def predict_proba_softmax(X: np.ndarray, W: np.ndarray) -> np.ndarray:
+    """
+    Return class probabilities for each row.
+
+    Returns
+    -------
+    P : np.ndarray, shape (N, K)
+    """
+    # TODO
+    raise NotImplementedError
+
+
+def predict_softmax(X: np.ndarray, W: np.ndarray) -> np.ndarray:
+    """
+    Return predicted class labels (argmax over probabilities/logits).
+
+    Returns
+    -------
+    yhat : np.ndarray, shape (N,)
+    """
+    # TODO
+    raise NotImplementedError
+
+
+def train_softmax(
+    X: np.ndarray,
+    y: np.ndarray,
+    K: int,
+    step_size: float = 0.1,
+    max_epochs: int = 3000,
+    tol: float = 1e-6,
+    batch_size: int = 0,
+    reg: float = 0.0,
+    seed: int = 0,
+) -> Dict[str, Any]:
+    """
+    Train softmax regression from W = zeros(d+1, K).
+
+    If batch_size == 0: full-batch GD per epoch.
+    Else: mini-batch GD with deterministic shuffling controlled by seed.
+
+    Early stop if abs(loss_t - loss_{t-1}) < tol (loss computed on full data).
+
+    Returns dict with at least:
+      - "W": np.ndarray (d+1, K)
+      - "loss_history": list[float]
+      - "acc_history": list[float] training accuracy
+      - "epochs": int
     """
     # TODO
     raise NotImplementedError
 
 
 if __name__ == "__main__":
-    # Quick sanity checks (not graded)
-    import numpy as np
-
-    # Example small point set (triangle)
-    X = np.array([[0.0, 0.0],
-                  [1.0, 0.0],
-                  [0.0, 1.0]])
-
+    # Quick self-check (not graded): load iris if present
     try:
-        Y = all_labelings(n=X.shape[0])
-        print("All labelings shape:", Y.shape)  # should be (2^n, n)
+        data = np.loadtxt("data/iris.txt")
+        X = data[:, :4]
+        y = data[:, 4].astype(int)
 
-        print("Shattered by linear threshold?", shattered_by_linear_threshold(X))
-        print("Shattered by axis threshold?", shattered_by_axis_threshold(X))
-        print("Shattered by circle?", shattered_by_circle(X))
-        print("Shattered by two parallel lines?", shattered_by_two_parallel_lines(X))
+        # Standardize using all data for this demo
+        X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-12)
+
+        K = int(np.max(y)) + 1
+        out = train_softmax(X, y, K=K, step_size=0.2, max_epochs=3000, tol=1e-9, batch_size=0, reg=1e-3, seed=0)
+        W = out["W"]
+        yhat = predict_softmax(X, W)
+        print("Train acc:", float(np.mean(yhat == y)))
+        print("Final loss:", out["loss_history"][-1], "epochs:", out["epochs"])
+    except FileNotFoundError:
+        print("data/iris.txt not found. Put dataset in data/ and rerun.")
     except NotImplementedError:
-        print("Some functions are not implemented yet.")
+        print("Implement the TODOs first.")
