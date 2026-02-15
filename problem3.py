@@ -63,7 +63,7 @@ def hinge_grad(X: np.ndarray, y: np.ndarray, w: np.ndarray, C: float = 1.0) -> n
 
     if np.any(violated):
         grad[0] -= C * np.sum(y[violated]) / N
-        grad[1:] -= C * C * (X[violated].T @ y[violated]) / N
+        grad[1:] -= C * (X[violated].T @ y[violated]) / N
     return grad
 
 
@@ -79,7 +79,9 @@ def predict_svm(X: np.ndarray, w: np.ndarray) -> np.ndarray:
         Entries in {-1, +1}.
     """
     scores = w[0] + X.dot(w[1:])
-    return np.sign(scores)
+    yhat = np.sign(scores)
+    yhat[yhat == 0] = 1  # Break ties as +1
+    return yhat.astype(int)
 
 def train_svm_hinge(
     X: np.ndarray,
@@ -149,7 +151,7 @@ if __name__ == "__main__":
         # Standardize using subset
         X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-12)
 
-        out = train_svm_hinge(X, y, C=1.0, step_size=0.05, max_epochs=5000, tol=1e-1, batch_size=0, seed=0)
+        out = train_svm_hinge(X, y, C=1.0, step_size=0.05, max_epochs=5000, tol=1e-9, batch_size=0, seed=0)
         w = out["w"]
         yhat = predict_svm(X, w)
         print("Train acc:", float(np.mean(yhat == y)))

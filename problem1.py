@@ -35,7 +35,6 @@ def load_iris_binary(path: str) -> Tuple[np.ndarray, np.ndarray]:
 
     verysmallnumber = 1e-12 # prevent division by zero
     X = (X - X.mean(axis=0)) / (X.std(axis=0) + verysmallnumber)
-    X = np.c_[np.ones(X.shape[0]), X]
 
     return X, y
 
@@ -71,7 +70,8 @@ def logistic_loss(X: np.ndarray, y: np.ndarray, w: np.ndarray, reg: float = 0.0)
     loss : float
     """
     N = X.shape[0]
-    p = sigmoid(X.dot(w))
+    z = w[0] + X @ w[1:]
+    p = sigmoid(z)
     loss = -np.sum(y * np.log(p) + (1 - y) * np.log(1 - p)) / N
     if reg > 0:
         loss += reg * np.sum(w[1:] ** 2)
@@ -88,8 +88,13 @@ def logistic_grad(X: np.ndarray, y: np.ndarray, w: np.ndarray, reg: float = 0.0)
     """
 
     N = X.shape[0]
-    p = sigmoid(X.dot(w))
-    grad = X.T @ (p - y) / N
+    z = w[0] + X @ w[1:]
+    p = sigmoid(z)
+    
+    grad = np.zeros_like(w)
+    grad[0] = np.mean(p - y)
+    grad[1:] = X.T @ (p - y) / N
+    
     if reg > 0:
         grad[1:] += 2 * reg * w[1:]
     return grad
@@ -103,7 +108,8 @@ def predict_proba(X: np.ndarray, w: np.ndarray) -> np.ndarray:
     -------
     p : np.ndarray, shape (N,)
     """
-    return sigmoid(X.dot(w))
+    z = w[0] + X @ w[1:]
+    return sigmoid(z)
 
 def predict(X: np.ndarray, w: np.ndarray, threshold: float = 0.5) -> np.ndarray:
     """
@@ -141,7 +147,7 @@ def train_logreg(
     """
     loss_history = []
     err_history = []
-    w = np.zeros(X.shape[1])
+    w = np.zeros(X.shape[1] + 1)
 
     if batch_size == 0:
         for i in range(max_epochs):
