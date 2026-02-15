@@ -32,8 +32,13 @@ def hinge_loss(X: np.ndarray, y: np.ndarray, w: np.ndarray, C: float = 1.0) -> f
     -------
     loss : float
     """
-    # TODO
-    raise NotImplementedError
+    N = X.shape[0]
+    scores = w[0] + X.dot(w[1:])
+    margins = y * scores
+    hinge = np.maximum(0, 1 - margins)
+
+    loss = 1 / 2 * np.sum(w[1:] ** 2) + C * np.mean(hinge)
+    return loss
 
 
 def hinge_grad(X: np.ndarray, y: np.ndarray, w: np.ndarray, C: float = 1.0) -> np.ndarray:
@@ -46,8 +51,20 @@ def hinge_grad(X: np.ndarray, y: np.ndarray, w: np.ndarray, C: float = 1.0) -> n
     -------
     grad : np.ndarray, shape (d+1,)
     """
-    # TODO
-    raise NotImplementedError
+    N = X.shape[0]
+    scores = w[0] + X.dot(w[1:])
+    margins = y * scores
+
+    violated = margins < 1
+
+    grad = np.zeros_like(w)
+
+    grad[1:] = w[1:]
+
+    if np.any(violated):
+        grad[0] -= C * np.sum(y[violated]) / N
+        grad[1:] -= C * C * (X[violated].T @ y[violated]) / N
+    return grad
 
 
 def predict_svm(X: np.ndarray, w: np.ndarray) -> np.ndarray:
@@ -61,9 +78,8 @@ def predict_svm(X: np.ndarray, w: np.ndarray) -> np.ndarray:
     yhat : np.ndarray, shape (N,)
         Entries in {-1, +1}.
     """
-    # TODO
-    raise NotImplementedError
-
+    scores = w[0] + X.dot(w[1:])
+    return np.sign(scores)
 
 def train_svm_hinge(
     X: np.ndarray,
@@ -89,9 +105,34 @@ def train_svm_hinge(
       - "err_history": list[float] training error rate
       - "epochs": int
     """
-    # TODO
-    raise NotImplementedError
+    loss_history = []
+    err_history = []
+    w = np.zeros(X.shape[1]+1)
 
+    if batch_size == 0:
+        for i in range(max_epochs):
+            g = hinge_grad(X, y, w, C)
+            w -= step_size * g
+            loss_t = hinge_loss(X, y, w, C)
+            loss_history.append(loss_t)
+            err_history.append(np.mean(predict_svm(X, w) != y))
+            if(i > 0 and abs(loss_t - loss_history[i-1]) < tol):
+                break
+    else:
+        np.random.seed(seed)
+        for i in range(max_epochs):
+            idx = np.random.permutation(X.shape[0])
+            for j in range(0, X.shape[0], batch_size):
+                X_batch = X[idx[j:j+batch_size]]
+                y_batch = y[idx[j:j+batch_size]]
+                g = hinge_grad(X_batch, y_batch, w, C)
+                w -= step_size * g
+            loss_t = hinge_loss(X, y, w, C)
+            loss_history.append(loss_t)
+            err_history.append(np.mean(predict_svm(X, w) != y))
+            if(i > 0 and abs(loss_t - loss_history[i-1]) < tol):
+                break
+    return {"w": w, "loss_history": loss_history, "err_history": err_history, "epochs": i+1}
 
 if __name__ == "__main__":
     # Quick self-check (not graded): binary iris (0 vs 1) if present
@@ -108,7 +149,7 @@ if __name__ == "__main__":
         # Standardize using subset
         X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-12)
 
-        out = train_svm_hinge(X, y, C=1.0, step_size=0.05, max_epochs=5000, tol=1e-9, batch_size=0, seed=0)
+        out = train_svm_hinge(X, y, C=1.0, step_size=0.05, max_epochs=5000, tol=1e-1, batch_size=0, seed=0)
         w = out["w"]
         yhat = predict_svm(X, w)
         print("Train acc:", float(np.mean(yhat == y)))
