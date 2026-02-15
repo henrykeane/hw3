@@ -74,7 +74,7 @@ def softmax_loss(X: np.ndarray, y: np.ndarray, W: np.ndarray, reg: float = 0.0) 
     loss = np.mean(-Z_true_class + log_sum_exmp.flatten())
 
     if reg > 0:
-        loss += reg * np.sum(W[1:,:] ** 2)
+        loss += 0.5 * reg * np.sum(W[1:,:] ** 2)
 
     return loss
 
@@ -100,7 +100,7 @@ def softmax_grad(X: np.ndarray, y: np.ndarray, W: np.ndarray, reg: float = 0.0) 
     grad[1:,:] = X.T @ (P - Y) / N
 
     if reg > 0:
-        grad[1:,:] += 2 * reg * W[1:,:]
+        grad[1:,:] += reg * W[1:,:]
     return grad
 
 
